@@ -1,0 +1,156 @@
+<!-- index.html (for reading posts) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog - Read Posts</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Blog - Read Posts</h1>
+  </header>
+  <main>
+    <section id="posts"></section>
+  </main>
+</body>
+<script src="app.js"></script>
+</html>
+<!-- newpost.html (for writing new posts) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog - New Post</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Blog - New Post</h1>
+  </header>
+  <main>
+    <form action="/newpost" method="POST">
+      <label for="title">Title:</label>
+      <input type="text" id="title" name="title" required>
+
+      <label for="content">Content:</label>
+      <textarea id="content" name="content" required></textarea>
+
+      <button type="submit">Publish</button>
+    </form>
+  </main>
+</body>
+</html>
+/* styles.css */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 1em;
+}
+
+main {
+  padding: 2em;
+}
+
+section {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+article {
+  border: 1px solid #ccc;
+  padding: 1em;
+  margin: 1em 0;
+}
+
+form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 16px;
+}
+
+button {
+  padding: 10px;
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+// server.js
+const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+
+const app = express();
+const port = 3000;
+
+mongoose.connect("mongodb://localhost:27017/blogDB", { useNewUrlParser: true, useUnifiedTopology: true });
+
+const postSchema = new mongoose.Schema({
+  title: String,
+  content: String
+});
+
+const Post = mongoose.model("Post", postSchema);
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/index.html");
+});
+
+app.get("/newpost", (req, res) => {
+  res.sendFile(__dirname + "/newpost.html");
+});
+
+app.post("/newpost", (req, res) => {
+  const newPost = new Post({
+    title: req.body.title,
+    content: req.body.content
+  });
+
+  newPost.save((err) => {
+    if (err) {
+      console.log(err);
+      res.send("Error occurred while publishing the post.");
+    } else {
+      res.redirect("/");
+    }
+  });
+});
+
+app.get("/posts", (req, res) => {
+  Post.find({}, (err, posts) => {
+    if (err) {
+      console.log(err);
+      res.send("Error occurred while fetching posts.");
+    } else {
+      res.json(posts);
+    }
+  });
+});
+
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});
